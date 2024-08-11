@@ -23,21 +23,28 @@ def analyze_yearly_data(df):
     yearly_data = {}
 
     for year in df['Year'].unique():
-        yearly_df = df[df['Year'] == year]
+        yearly_df = df[df['Year'] == year].copy()
+        
+        # Calculate net sales and identify California sales
+        yearly_df.loc[:, 'Net Sales'] = yearly_df['Total'] - yearly_df['Depop fee']
+        yearly_df.loc[:, 'Is CA'] = yearly_df['State'].str.lower().str.contains('ca|california')
+        
         monthly_summary = yearly_df.groupby('Month').agg({
             'Total': 'sum',
             'Depop fee': 'sum',
-            'Size': lambda x: x.value_counts().to_dict(),
-            'State': lambda x: (x.str.lower().str.contains('ca|california')).sum()
+            'Net Sales': 'sum',
+            'Is CA': 'sum',
+            'Size': lambda x: x.value_counts().to_dict()
         }).reset_index()
         
+        # Calculate net sales within California
+        monthly_summary['Net Sales in CA'] = yearly_df[yearly_df['Is CA']].groupby('Month')['Net Sales'].sum().reset_index(drop=True)
+
         monthly_summary.rename(columns={
             'Total': 'Total Sales',
             'Depop fee': 'Total Fees Paid',
-            'State': 'Shipments inside CA'
+            'Is CA': 'Shipments inside CA'
         }, inplace=True)
-
-        monthly_summary['Net Sales'] = monthly_summary['Total Sales'] - monthly_summary['Total Fees Paid']
 
         sizes = ['XS', 'S', 'M', 'L']
         for size in sizes:
@@ -45,6 +52,7 @@ def analyze_yearly_data(df):
         
         monthly_summary.drop(columns=['Size'], inplace=True)
         monthly_summary['Month'] = monthly_summary['Month'].apply(lambda x: calendar.month_name[x])
+
         yearly_data[year] = monthly_summary
     
     return yearly_data
