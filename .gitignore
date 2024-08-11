@@ -1,0 +1,4 @@
+input/*.csv
+venv/
+output/csv/*.csv
+output/spreadsheets/*.xlsx
