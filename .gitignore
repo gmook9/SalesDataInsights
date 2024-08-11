@@ -1,3 +1,4 @@
 input/*.csv
 venv/
-output/*.csv
+output/csv/*.csv
+output/spreadsheets/*.xlsx
